@@ -22,13 +22,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := r.ParseMultipartForm(10485760) // 10 МБ
-	if err != nil {
-		log.Printf("Ошибка парсинга формы: %v", err)
-		http.Error(w, "Ошибка обработки формы", http.StatusInternalServerError)
-		return
-	}
-
 	file, header, err := r.FormFile("myFile")
 	if err != nil {
 		log.Printf("Ошибка получения файла: %v", err)
@@ -48,29 +41,18 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Ошибка конвертации: %v", err), http.StatusInternalServerError)
 		return
 	}
-	timestamp := time.Now().UTC().String()
-	originalExt := filepath.Ext(header.Filename)
-	newFileName := timestamp + originalExt
+	newFileName := time.Now().Format("2006-01-02_15-04-05") + filepath.Ext(header.Filename)
 
-	outputFile, err := os.Create(newFileName)
-	if err != nil {
-		log.Printf("Ошибка создания файла: %v", err)
-		http.Error(w, "Ошибка создания файла", http.StatusInternalServerError)
-		return
-	}
-	defer outputFile.Close()
-
-	_, err = outputFile.WriteString(convertedContent)
-	if err != nil {
-		log.Printf("Ошибка записи в файл: %v", err)
-		http.Error(w, "Ошибка записи в файл", http.StatusInternalServerError)
+	if err := os.WriteFile(newFileName, []byte(convertedContent), 0644); err != nil {
+		log.Printf("Ошибка сохранения файла: %v", err)
+		http.Error(w, "Ошибка сохранения файла", http.StatusInternalServerError)
 		return
 	}
 
 	log.Printf("Файл успешно создан: %s", newFileName)
+
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	if _, err := fmt.Fprintf(w, "Результат конвертации:\n\n%s\n\nФайл сохранен как: %s", convertedContent, newFileName); err != nil {
+	if _, err := fmt.Fprintf(w, "Исходное содержимое:\n\n%s\n\nРезультат конвертации:\n\n%s\n\nФайл сохранен как: %s", string(fileContent), convertedContent, newFileName); err != nil {
 		log.Printf("Ошибка отправки ответа: %v", err)
 	}
 }
