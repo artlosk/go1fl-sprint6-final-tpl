@@ -27,10 +27,7 @@ func ConvertString(input string) (string, error) {
 }
 
 func isMorseCode(s string) bool {
-	for _, char := range s {
-		if char != '.' && char != '-' && char != ' ' {
-			return false
-		}
-	}
-	return true
+	return !strings.ContainsFunc(s, func(r rune) bool {
+		return r != '.' && r != '-' && r != ' '
+	})
 }

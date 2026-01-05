@@ -13,16 +13,7 @@ import (
 )
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	htmlContent, err := os.ReadFile("index.html")
-	if err != nil {
-		log.Printf("Ошибка чтения index.html: %v", err)
-		http.Error(w, "Не удалось загрузить страницу", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write(htmlContent)
+	http.ServeFile(w, r, "index.html")
 }
 
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
@@ -79,5 +70,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Файл успешно создан: %s", newFileName)
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Результат конвертации:\n\n%s\n\nФайл сохранен как: %s", convertedContent, newFileName)
+	if _, err := fmt.Fprintf(w, "Результат конвертации:\n\n%s\n\nФайл сохранен как: %s", convertedContent, newFileName); err != nil {
+		log.Printf("Ошибка отправки ответа: %v", err)
+	}
 }
